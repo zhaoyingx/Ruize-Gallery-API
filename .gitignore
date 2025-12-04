@@ -1,0 +1,10 @@
+.env
+*.db
+data/
+*.exe
+*.dll
+*.so
+*.dylib
+vendor/
+*.log
+.DS_Store
