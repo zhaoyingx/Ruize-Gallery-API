@@ -6,6 +6,7 @@ import (
 	"api-template/config"
 	"api-template/managers"
 	"api-template/routes"
+	"api-template/services"
 )
 
 func main() {
@@ -21,7 +22,12 @@ func main() {
 		log.Fatalf("初始化数据库失败: %v", err)
 	}
 
-	// 3. 启动路由
+	// 3. 初始化 S3 client
+	if err := services.InitGalleryService(); err != nil {
+		log.Fatalf("初始化 S3 失败: %v", err)
+	}
+
+	// 4. 启动路由
 	r := routes.SetupRouter(db)
 	log.Printf("服务器启动于 :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

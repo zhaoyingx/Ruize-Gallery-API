@@ -23,7 +23,7 @@ func QueryImagesByYear(ctx *gin.Context) {
 		return
 	}
 
-	results, err := services.GalleryService.QueryByYear(year)
+	results, err := services.GalleryService.QueryByYearFromS3(year)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -29,8 +29,6 @@ type GraduateEmploymentResponse struct {
 }
 
 type Images struct {
-	gorm.Model
-	Year      int    `json:"year" gorm:"index"`
-	ImageURL  string `json:"image_url" gorm:"size:512"`
-	Caption   string `json:"caption" gorm:"size:255"`
+	Key string `json:"key"`
+    Url string `json:"url"`
 }
