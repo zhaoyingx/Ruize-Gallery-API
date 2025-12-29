@@ -4,7 +4,10 @@ import (
 	"api-template/models"
 	"context"
 	"fmt"
+	"net/url"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,54 +15,85 @@ import (
 
 var GalleryService = &galleryService{}
 
-type galleryService struct{
+type galleryService struct {
 	client     *s3.Client
-    bucketName string
+	bucketName string
+}
+
+func (s *galleryService) GetClient() *s3.Client {
+	return s.client
+}
+
+func (s *galleryService) GetBucketName() string {
+	return s.bucketName
 }
 
 func InitGalleryService() error {
-    cli, bucket, err := NewS3Client()
-    if err != nil {
-        return err
-    }
+	cli, bucket, err := NewS3Client()
+	if err != nil {
+		return err
+	}
 
-    GalleryService = &galleryService{
-        client:     cli,
-        bucketName: bucket,
-    }
+	GalleryService = &galleryService{
+		client:     cli,
+		bucketName: bucket,
+	}
 
-    return nil
+	return nil
 }
 
 func (s *galleryService) QueryByYearFromS3(year int) ([]models.Images, error) {
 	prefix := fmt.Sprintf("%d/", year)
 
-    out, err := s.client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-        Bucket: aws.String(s.bucketName),
-        Prefix: aws.String(prefix),
-    })
-    if err != nil {
-        return nil, fmt.Errorf("S3 列表查询失败: %w", err)
-    }
+	out, err := s.client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucketName),
+		Prefix: aws.String(prefix),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("S3 列表查询失败: %w", err)
+	}
 
-    var results []models.Images
+	var results []models.Images
 
-    for _, item := range out.Contents {
-        key := *item.Key
+	// 创建 presign client
+	presignClient := s3.NewPresignClient(s.client)
 
-        if strings.HasSuffix(key, "/") {
-            continue
-        }
+	for _, item := range out.Contents {
+		key := *item.Key
 
-        url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", s.bucketName, key)
+		if strings.HasSuffix(key, "/") {
+			continue
+		}
 
-        results = append(results, models.Images{
-            Key: key,
-            Url: url,
-        })
-    }
+		var imageUrl string
+		lowerKey := strings.ToLower(key)
 
-    return results, nil
+		// 检查是否是 HEIC 格式
+		if strings.HasSuffix(lowerKey, ".heic") || strings.HasSuffix(lowerKey, ".heif") {
+			// HEIC 文件使用转换接口
+			baseURL := os.Getenv("BASE_URL")
+			if baseURL == "" {
+				baseURL = "http://localhost:8082"
+			}
+			imageUrl = fmt.Sprintf("%s/api/v1/image/convert?key=%s", baseURL, url.QueryEscape(key))
+		} else {
+			// 其他格式使用预签名 URL
+			presignResult, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
+				Bucket: aws.String(s.bucketName),
+				Key:    aws.String(key),
+			}, s3.WithPresignExpires(time.Hour*1))
+
+			if err != nil {
+				return nil, fmt.Errorf("生成预签名 URL 失败: %w", err)
+			}
+			imageUrl = presignResult.URL
+		}
+
+		results = append(results, models.Images{
+			Key: key,
+			Url: imageUrl,
+		})
+	}
+
+	return results, nil
 }
-
-

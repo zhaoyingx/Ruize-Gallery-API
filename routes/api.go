@@ -36,6 +36,12 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		gallery.GET("", controllers.QueryImagesByYear)
 	}
 
+	// 图片转换接口
+	image := v1.Group("/image")
+	{
+		image.GET("/convert", controllers.ConvertImage)
+	}
+
 	// 可在此继续添加其他资源路由
 
 	return r

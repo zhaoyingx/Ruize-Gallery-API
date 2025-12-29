@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.2
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.40.1
+	github.com/adrium/goheif v0.0.0-20230113233934-ca402e77a786
 	github.com/aws/aws-sdk-go-v2/config v1.32.3
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.93.0
 	github.com/gin-contrib/cors v1.7.6
@@ -13,6 +13,11 @@ require (
 	github.com/joho/godotenv v1.5.1
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
+)
+
+require (
+	github.com/aws/aws-sdk-go-v2 v1.40.1 // indirect
+	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 )
 
 require (
