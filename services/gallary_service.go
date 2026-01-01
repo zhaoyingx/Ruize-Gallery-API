@@ -62,10 +62,11 @@ func (s *galleryService) QueryByYearFromS3(year int) ([]models.Images, error) {
 			continue
 		}
 
+		// 15分钟有效期：足够浏览，但分享后很快失效
 		presignResult, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
 			Bucket: aws.String(s.bucketName),
 			Key:    aws.String(key),
-		}, s3.WithPresignExpires(time.Hour*1))
+		}, s3.WithPresignExpires(time.Minute*15))
 
 		if err != nil {
 			return nil, fmt.Errorf("生成预签名 URL 失败: %w", err)
