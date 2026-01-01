@@ -53,9 +53,8 @@ func (s *galleryService) QueryByYearFromS3(year int) ([]models.Images, error) {
 		return nil, fmt.Errorf("S3 列表查询失败: %w", err)
 	}
 
-	var results []models.Images
+	results := make([]models.Images, 0)
 
-	// 创建 presign client
 	presignClient := s3.NewPresignClient(s.client)
 
 	for _, item := range out.Contents {
@@ -68,16 +67,13 @@ func (s *galleryService) QueryByYearFromS3(year int) ([]models.Images, error) {
 		var imageUrl string
 		lowerKey := strings.ToLower(key)
 
-		// 检查是否是 HEIC 格式
 		if strings.HasSuffix(lowerKey, ".heic") || strings.HasSuffix(lowerKey, ".heif") {
-			// HEIC 文件使用转换接口
 			baseURL := os.Getenv("BASE_URL")
 			if baseURL == "" {
 				baseURL = "http://localhost:8082"
 			}
 			imageUrl = fmt.Sprintf("%s/api/v1/image/convert?key=%s", baseURL, url.QueryEscape(key))
 		} else {
-			// 其他格式使用预签名 URL
 			presignResult, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
 				Bucket: aws.String(s.bucketName),
 				Key:    aws.String(key),

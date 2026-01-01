@@ -22,7 +22,6 @@ func (GraduateEmployment) TableName() string {
 	return "graduate_employment"
 }
 
-// GraduateEmploymentResponse 查询结果返回数据结构
 type GraduateEmploymentResponse struct {
 	School                string `json:"school"`
 	EmploymentRateOverall string `json:"employment_rate_overall"`
