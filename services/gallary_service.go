@@ -4,8 +4,6 @@ import (
 	"api-template/models"
 	"context"
 	"fmt"
-	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -64,30 +62,18 @@ func (s *galleryService) QueryByYearFromS3(year int) ([]models.Images, error) {
 			continue
 		}
 
-		var imageUrl string
-		lowerKey := strings.ToLower(key)
+		presignResult, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
+			Bucket: aws.String(s.bucketName),
+			Key:    aws.String(key),
+		}, s3.WithPresignExpires(time.Hour*1))
 
-		if strings.HasSuffix(lowerKey, ".heic") || strings.HasSuffix(lowerKey, ".heif") {
-			baseURL := os.Getenv("BASE_URL")
-			if baseURL == "" {
-				baseURL = "http://localhost:8082"
-			}
-			imageUrl = fmt.Sprintf("%s/api/v1/image/convert?key=%s", baseURL, url.QueryEscape(key))
-		} else {
-			presignResult, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
-				Bucket: aws.String(s.bucketName),
-				Key:    aws.String(key),
-			}, s3.WithPresignExpires(time.Hour*1))
-
-			if err != nil {
-				return nil, fmt.Errorf("生成预签名 URL 失败: %w", err)
-			}
-			imageUrl = presignResult.URL
+		if err != nil {
+			return nil, fmt.Errorf("生成预签名 URL 失败: %w", err)
 		}
 
 		results = append(results, models.Images{
 			Key: key,
-			Url: imageUrl,
+			Url: presignResult.URL,
 		})
 	}
 

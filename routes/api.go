@@ -7,13 +7,11 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func SetupRouter(db *gorm.DB) *gin.Engine {
+func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
-	// CORS 配置
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
@@ -23,7 +21,6 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
@@ -35,14 +32,6 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	{
 		gallery.GET("", controllers.QueryImagesByYear)
 	}
-
-	// 图片转换接口
-	image := v1.Group("/image")
-	{
-		image.GET("/convert", controllers.ConvertImage)
-	}
-
-	// 可在此继续添加其他资源路由
 
 	return r
 }
